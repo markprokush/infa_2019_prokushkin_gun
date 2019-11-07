@@ -182,9 +182,11 @@ class target():
 
 
 list_of_targets = []
+
 for i in range(2):
     t = target()
     list_of_targets.append(t)
+
 t1 = list_of_targets[0]
 t2 = list_of_targets[1]
 screen1 = canv.create_text(400, 300, text='', font='28')
