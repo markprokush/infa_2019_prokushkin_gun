@@ -192,6 +192,7 @@ g1 = gun()
 
 
 def new_game(event=''):
+
     global gun, t1, t2, screen1, balls, bullet
     t1.new_target()
     t2.new_target()
@@ -203,6 +204,7 @@ def new_game(event=''):
     z = 0.03
     t1.live = 1
     t2.live = 1
+
     while t1.live or t2.live or balls:
         for b in balls:
             b.move()
