@@ -146,7 +146,6 @@ class target():
         self.points = 0
         self.live = 1
         self.id = canv.create_oval(0, 0, 0, 0)
-        self.id_points = canv.create_text(30, 30, text=self.points, font='28')
         self.new_target()
 
     def new_target(self):
@@ -165,8 +164,6 @@ class target():
     def hit(self, points=1):
         """Попадание шарика в цель"""
         canv.coords(self.id, -10, -10, -10, -10)
-        self.points += points
-        canv.itemconfig(self.id_points, text=self.points)
 
     def move_target(self):
         """Движение мишени"""
@@ -178,24 +175,24 @@ class target():
         if ((canv.coords(self.id)[3] + self.dy >= 600) and self.dy > 0) \
                 or ((canv.coords(self.id)[1] + self.dy <= 10) and self.dy < 0):
             self.dy = -self.dy
+        if canv.coords(self.id)[0] == -10:
+            self.dx = 0
+            self.dy = 0
         canv.move(self.id, self.dx, self.dy)
 
 
-list_of_targets = []
-
-for i in range(2):
-    t = target()
-    list_of_targets.append(t)
-
-t1 = list_of_targets[0]
-t2 = list_of_targets[1]
+t1 = target()
+t2 = target()
 screen1 = canv.create_text(400, 300, text='', font='28')
+level_bar = canv.create_text(400, 30, text='', font='28')
 g1 = gun()
+level = 1
 
 
 def new_game(event=''):
-
-    global gun, t1, t2, screen1, balls, bullet
+    global gun, t1, t2, screen1, balls, bullet, level
+    canv.itemconfig(level_bar, text=str(level))
+    level += 1
     t1.new_target()
     t2.new_target()
     bullet = 0
@@ -230,6 +227,7 @@ def new_game(event=''):
         t2.move_target()
 
     canv.itemconfig(screen1, text='')
+
     canv.delete(gun)
     root.after(750, new_game)
 
