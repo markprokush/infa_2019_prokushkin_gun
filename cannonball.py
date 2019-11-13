@@ -17,6 +17,7 @@ level = 1
 number_of_targets = 5
 
 targets = []
+balls = []
 
 
 class Ball:
@@ -211,7 +212,6 @@ def new_game(event=''):
     canv.itemconfig(level_bar, text='Level:' + str(level))
     level += 1
     bullet = 0
-    balls = []
     canv.bind('<Button-1>', gun.fire2_start)
     canv.bind('<ButtonRelease-1>', gun.fire2_end)
     canv.bind('<Motion>', gun.targetting)
