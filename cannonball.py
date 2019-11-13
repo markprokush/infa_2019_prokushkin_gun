@@ -11,9 +11,17 @@ root.geometry('800x600')
 canv = tk.Canvas(root, bg='white')
 canv.pack(fill=tk.BOTH, expand=1)
 
+result_bar = canv.create_text(400, 300, text='', font='28')
+level_bar = canv.create_text(400, 30, text='', font='28')
+level = 1
+number_of_targets = 5
 
-class ball():
-    def __init__(self, x=40, y=450):
+targets = []
+
+
+class Ball:
+
+    def __init__(self, x=40):
         """ Конструктор класса ball
 
         Args:
@@ -21,7 +29,7 @@ class ball():
         y - начальное положение мяча по вертикали
         """
         self.x = x
-        self.y = y
+        self.y = Gun.y1
         self.r = 10
         self.vx = 0
         self.vy = 0
@@ -51,14 +59,16 @@ class ball():
         self.x и self.y с учетом скоростей self.vx и self.vy, силы гравитации, действующей на мяч,
         и стен по краям окна (размер окна 800х600).
         """
-        self.vy -= 1
+        self.vy -= 1  # ускорение
+        # проверка столкновения со стенками:
         if ((canv.coords(self.id)[2] + self.vx >= 800) and (self.vx > 0)) \
                 or ((canv.coords(self.id)[0] + self.vx <= 0) and (self.vx < 0)):
             self.vx = -self.vx
-            self.vx *= 0.5
+            self.vx *= 0.5  # шарик теряет горизонт. скорость после удара о стенку
+        # проверка столкновения с полом и потолком
         if ((canv.coords(self.id)[3] - self.vy >= 600) and (self.vy < 0)) \
                 or ((canv.coords(self.id)[1] - self.vy <= 0) and (self.vy > 0)):
-            self.vy *= 0.5
+            self.vy *= 0.5  # шарик теряет обе компоненты скорости после удара о потолок или пол
             self.vx *= 0.5
             self.vy = -self.vy
 
@@ -73,7 +83,7 @@ class ball():
         if self.vx ** 2 + self.vy ** 2 == 0:
             canv.coords(self.id, -10, -10, -10, -10)
 
-        if math.sqrt(self.vx ** 2 + self.vy ** 2) < 1:
+        if math.sqrt(self.vx ** 2 + self.vy ** 2) < 1:  # удаляет шар из списка шаров, если модуль его скорости меньше 1
             balls.remove(self)
 
     def hittest(self, obj):
@@ -84,6 +94,7 @@ class ball():
         Returns:
             Возвращает True в случае столкновения мяча и цели. В противном случае возвращает False.
         """
+        # проверяет, меньше ли расстояние между центрами шарика и мишени суммы их радиусов
         if (self.x - 0.5 * (canv.coords(obj.id)[0] + canv.coords(obj.id)[2])) ** 2 + \
                 (self.y - 0.5 * (canv.coords(obj.id)[1] + canv.coords(obj.id)[3])) ** 2 < \
                 (self.r + 1 / 2 * (abs(canv.coords(obj.id)[0] - canv.coords(obj.id)[2]))) ** 2:
@@ -92,12 +103,15 @@ class ball():
             return False
 
 
-class gun():
+class Gun:
+    y1 = rnd(100, 500)
+
     def __init__(self):
         self.f2_power = 10
         self.f2_on = 0
         self.an = 1
-        self.id = canv.create_line(20, 450, 50, 420, width=7)
+        y1 = self.y1
+        self.id = canv.create_line(20, y1, 50, y1 - 30, width=7)
 
     def fire2_start(self, event):
         self.f2_on = 1
@@ -110,7 +124,7 @@ class gun():
         """
         global balls, bullet
         bullet += 1
-        new_ball = ball()
+        new_ball = Ball()
         new_ball.r += 5
         self.an = math.atan((event.y - new_ball.y) / (event.x - new_ball.x))
         new_ball.vx = self.f2_power * math.cos(self.an)
@@ -122,14 +136,14 @@ class gun():
     def targetting(self, event=0):
         """Прицеливание. Зависит от положения мыши"""
         if event:
-            self.an = math.atan((event.y - 450) / (event.x - 20))
+            self.an = math.atan((event.y - self.y1) / (event.x - 20))
         if self.f2_on:
             canv.itemconfig(self.id, fill='orange')
         else:
             canv.itemconfig(self.id, fill='black')
-        canv.coords(self.id, 20, 450,
+        canv.coords(self.id, 20, self.y1,
                     20 + max(self.f2_power, 20) * math.cos(self.an),
-                    450 + max(self.f2_power, 20) * math.sin(self.an)
+                    self.y1 + max(self.f2_power, 20) * math.sin(self.an)
                     )
 
     def power_up(self):
@@ -141,7 +155,7 @@ class gun():
             canv.itemconfig(self.id, fill='black')
 
 
-class target():
+class Target:
     def __init__(self):
         self.points = 0
         self.live = 1
@@ -169,66 +183,65 @@ class target():
         """Движение мишени"""
         self.x += self.dx
         self.y += self.dy
+        # проверка столкновения со стенками (для мишеней существует стенка x=200, чтобы пушка могла нормально целиться):
         if ((canv.coords(self.id)[2] + self.dx >= 800) and self.dx > 0) \
                 or ((canv.coords(self.id)[0] + self.dx <= 200) and (self.dx < 0)):
             self.dx = -self.dx
+        # проверка столкновения с полом или потолком:
         if ((canv.coords(self.id)[3] + self.dy >= 600) and self.dy > 0) \
                 or ((canv.coords(self.id)[1] + self.dy <= 10) and self.dy < 0):
             self.dy = -self.dy
+        # зануляет скорость сбитых мишеней, которые отправили в точку (-10, -10)
         if canv.coords(self.id)[0] == -10:
             self.dx = 0
             self.dy = 0
         canv.move(self.id, self.dx, self.dy)
 
 
-t1 = target()
-t2 = target()
-screen1 = canv.create_text(400, 300, text='', font='28')
-level_bar = canv.create_text(400, 30, text='', font='28')
-g1 = gun()
-level = 1
+gun = Gun()
 
 
 def new_game(event=''):
-    global gun, t1, t2, screen1, balls, bullet, level
-    canv.itemconfig(level_bar, text=str(level))
+    global balls, bullet, level
+
+    for i in range(number_of_targets):
+        target = Target()
+        targets.append(target)
+
+    canv.itemconfig(level_bar, text='Level:' + str(level))
     level += 1
-    t1.new_target()
-    t2.new_target()
     bullet = 0
     balls = []
-    canv.bind('<Button-1>', g1.fire2_start)
-    canv.bind('<ButtonRelease-1>', g1.fire2_end)
-    canv.bind('<Motion>', g1.targetting)
+    canv.bind('<Button-1>', gun.fire2_start)
+    canv.bind('<ButtonRelease-1>', gun.fire2_end)
+    canv.bind('<Motion>', gun.targetting)
     z = 0.03
-    t1.live = 1
-    t2.live = 1
-
-    while t1.live or t2.live or balls:
+    life = number_of_targets  # счетчик уничтоженных мишеней
+    for target in targets:
+        target.live = 1
+    while life > 0 or balls:  # работает, пока не все мишени уничтожены или остаются шарики
         for b in balls:
             b.move()
-            if b.hittest(t1) or b.hittest(t2):
-                if b.hittest(t1) and t1.live:
-                    t1.live = 0
-                    t1.hit()
-                if b.hittest(t2) and t2.live:
-                    t2.live = 0
-                    t2.hit()
-                if t1.live == 0 and t2.live == 0:
-                    canv.bind('<Button-1>', '')
-                    canv.bind('<ButtonRelease-1>', '')
-                    canv.itemconfig(screen1, text='Вы уничтожили цели за ' + str(bullet) + ' выстрелов')
+            for target in targets:
+                if b.hittest(target) and target.live:  # проверяет попадание шарика в мишень
+                    target.hit()
+                    target.live = 0
+                    life -= 1
+            if life == 0:  # когда мишеней не остается, отображает результат
+                canv.bind('<Button-1>', '')
+                canv.bind('<ButtonRelease-1>', '')
+                canv.itemconfig(result_bar, text='Вы уничтожили цели за ' + str(bullet) + ' выстрелов')
 
         canv.update()
         time.sleep(z)
-        g1.targetting()
-        g1.power_up()
-        t1.move_target()
-        t2.move_target()
+        gun.targetting()
+        gun.power_up()
+        for target in targets:
+            target.move_target()
 
-    canv.itemconfig(screen1, text='')
+    canv.itemconfig(result_bar, text='')
 
-    canv.delete(gun)
+    canv.delete(Gun)
     root.after(750, new_game)
 
 
